@@ -1,0 +1,32 @@
+.App {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-evenly;
+	align-items: center;
+	height: 100vh;
+	text-align: center;
+	transition: background 500ms ease-in;
+}
+
+.App h1 {
+	color: #6d4d34;
+}
+
+.row {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.col {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 2.5em;
+	width: 2.5em;
+	cursor: pointer;
+	transition: box-shadow 150ms ease-in;
+}
+.col img {
+	width: 85%;
+}
