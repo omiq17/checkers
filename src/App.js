@@ -35,9 +35,10 @@ export default class App extends Component {
 				[0, 0, 0, 0, 0, 0, 0, 0]
 			],
 			player: 1,
+			selected: [],
 			remaining: [12, 12],
 			availableMoves: [],
-			selected: []
+			moveType: ""
 		}
 	}
 
@@ -67,21 +68,53 @@ export default class App extends Component {
 		})
 	}
 
+	// Find & highlight co-ordinates & set available moves
+	findAvailableMoves = (i, j, values, player) => {
+		let availableMoves = []
+		let combinations = []
+		if (player === 1) {
+			combinations = [[i - 1, j - 1], [i - 1, j + 1]]
+		} else {
+			combinations = [[i + 1, j - 1], [i + 1, j + 1]]
+		}
+		combinations.map(co => {
+			let fieldValue = values[co[0]][co[1]]
+			if (-1 < co[0] && co[0] < 8 && -1 < co[1] && co[1] < 8 && fieldValue === 10) {
+				this.highlightField(co[0], co[1])
+				availableMoves.push(co)
+			}
+		})
+		this.setState({ availableMoves })
+	}
+
 	// Handle a user click
 	handleClick = position => {
-		console.log(position, "pos")
-		let { values, player } = this.state
+		// console.log(position, "pos")
+
+		let { values, player, availableMoves } = this.state
 		let [i, j] = position
 		let currentValue = values[i][j]
 
-		// if (currentValue !== 0)
+		// Check if clicked on the available highlighted positions
+		availableMoves.map(arr => {
+			if (arr[0] === i && arr[1] === j) {
+				console.log(position, "pos")
+				return
+			}
+		})
+
 		if (currentValue !== 0 && currentValue !== 10 && currentValue % 2 === player % 2) {
 			this.highlightField(i, j)
-			this.switchPlayer()
+			this.setState({ selected: [i, j] })
+
+			this.findAvailableMoves(i, j, values, player)
+
+			// this.switchPlayer()
 		}
 	}
 
 	render() {
+		console.log(this.state.availableMoves, "state")
 		let styles = {
 			background:
 				this.state.player === 2
@@ -90,7 +123,7 @@ export default class App extends Component {
 		}
 		return (
 			<div className="App" style={styles}>
-				<h1>Checker</h1>
+				<h1>Checkers</h1>
 				<Board
 					values={this.state.values}
 					highlight={this.state.highlight}
