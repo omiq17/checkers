@@ -22,8 +22,8 @@
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	height: 2.5em;
-	width: 2.5em;
+	height: 3em;
+	width: 3em;
 	cursor: pointer;
 	transition: box-shadow 150ms ease-in;
 }

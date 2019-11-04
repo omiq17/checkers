@@ -35,10 +35,12 @@ export default class App extends Component {
 				[0, 0, 0, 0, 0, 0, 0, 0]
 			],
 			player: 1,
-			selected: [],
-			remaining: [12, 12],
+			current: [],
+			captured: [0, 0],
 			availableMoves: [],
-			moveType: ""
+			// 0: capturing move
+			// 1: non-capturing move
+			moveType: 1
 		}
 	}
 
@@ -53,7 +55,12 @@ export default class App extends Component {
 
 	//Switch player
 	switchPlayer = () => {
-		this.setState({ player: this.state.player === 1 ? 2 : 1 })
+		this.setState({
+			player: this.state.player === 1 ? 2 : 1,
+			availableMoves: [],
+			current: [],
+			moveType: 1
+		})
 	}
 
 	//Highlight a field
@@ -68,57 +75,122 @@ export default class App extends Component {
 		})
 	}
 
-	// Find & highlight co-ordinates & set available moves
-	findAvailableMoves = (i, j, values, player) => {
-		let availableMoves = []
-		let combinations = []
-		if (player === 1) {
-			combinations = [[i - 1, j - 1], [i - 1, j + 1]]
-		} else {
-			combinations = [[i + 1, j - 1], [i + 1, j + 1]]
-		}
-		combinations.map(co => {
-			let fieldValue = values[co[0]][co[1]]
-			if (-1 < co[0] && co[0] < 8 && -1 < co[1] && co[1] < 8 && fieldValue === 10) {
-				this.highlightField(co[0], co[1])
-				availableMoves.push(co)
+	// Check for capturing moves first
+	findMoveTypes = (values, player, moves_1, moves_2) => {
+		// console.log(moves_1, "moves_1")
+		// console.log(moves_2, "moves_2")
+		let capturing_moves = []
+		let non_capturing_moves = []
+		let value_1 = 0
+		let value_2 = 0
+
+		moves_1.forEach((move, index) => {
+			// value_1 = values[move[0]][move[1]]
+			if (move) value_1 = values[move[0]][move[1]]
+			else value_1 = 0
+			if (moves_2[index]) value_2 = values[moves_2[index][0]][moves_2[index][1]]
+			else value_2 = 0
+
+			if (value_1 === 10) {
+				non_capturing_moves.push(move)
+			} else if (value_1 % 2 !== player && value_2 === 10) {
+				capturing_moves.push(moves_2[index])
 			}
 		})
-		this.setState({ availableMoves })
+
+		// console.log(capturing_moves, "cp")
+		// console.log(non_capturing_moves, "ncp")
+		if (capturing_moves.length > 0) {
+			capturing_moves.forEach(move => this.highlightField(move[0], move[1]))
+			this.setState({ moveType: 0, availableMoves: capturing_moves })
+		} else {
+			non_capturing_moves.forEach(move => this.highlightField(move[0], move[1]))
+			this.setState({ moveType: 1, availableMoves: non_capturing_moves })
+		}
+	}
+
+	// Get all combination of moves
+	getAllMoves = (player, king, step, i, j) => {
+		let moves = []
+		let combinations = []
+		if (king) {
+			combinations = [
+				[i - step, j - step],
+				[i - step, j + step],
+				[i + step, j - step],
+				[i + step, j + step]
+			]
+		} else if (player === 1) {
+			combinations = [[i - step, j - step], [i - step, j + step]]
+		} else {
+			combinations = [[i + step, j - step], [i + step, j + step]]
+		}
+		// verify combinations
+		combinations.forEach(co => {
+			if (0 <= co[0] && co[0] <= 7 && 0 <= co[1] && co[1] <= 7) {
+				moves.push(co)
+			} else moves.push(null)
+		})
+		return moves
 	}
 
 	// Handle a user click
 	handleClick = position => {
-		// console.log(position, "pos")
+		console.log(position, "pos")
 
-		let { values, player, availableMoves } = this.state
+		let { player, availableMoves, moveType, current } = this.state
+		let values = this.state.values.slice()
+		// i : left side (top to bottom)
+		// j: top side (left to right)
 		let [i, j] = position
 		let currentValue = values[i][j]
+		let king = currentValue > 12 ? true : false
 
 		// Check if clicked on the available highlighted positions
 		availableMoves.map(arr => {
 			if (arr[0] === i && arr[1] === j) {
-				console.log(position, "pos")
+				// Move piece
+				values[i][j] = values[current[0]][current[1]]
+				values[current[0]][current[1]] = 10
+
+				// For Capturing move
+				if (moveType === 0) {
+					let vanish_i = (i + current[0]) / 2
+					let vanish_j = (j + current[1]) / 2
+					values[vanish_i][vanish_j] = 10
+
+					let captured = this.state.captured.slice()
+					captured[player - 1] = captured[player - 1] + 1
+					this.setState({ captured })
+				}
+
+				this.switchPlayer()
+				this.disableHighlight(finish => {
+					return
+				})
+				// console.log(position, "pos")
 				return
 			}
 		})
 
 		if (currentValue !== 0 && currentValue !== 10 && currentValue % 2 === player % 2) {
 			this.highlightField(i, j)
-			this.setState({ selected: [i, j] })
+			this.setState({ current: [i, j] })
 
-			this.findAvailableMoves(i, j, values, player)
+			let moves_1 = this.getAllMoves(player, king, 1, i, j)
+			let moves_2 = this.getAllMoves(player, king, 2, i, j)
+			// console.log(moves_1, moves_2, "moves")
 
-			// this.switchPlayer()
+			this.findMoveTypes(values, player, moves_1, moves_2)
 		}
 	}
 
 	render() {
-		console.log(this.state.availableMoves, "state")
+		console.log(this.state.captured, "state")
 		let styles = {
 			background:
 				this.state.player === 2
-					? "linear-gradient(180deg, rgba(212, 92, 69, 1) 11%, rgba(255, 255, 255, 1) 100%)"
+					? "linear-gradient(180deg, rgba(225, 99, 75, 1) 11%, rgba(255, 255, 255, 1) 100%)"
 					: "linear-gradient(180deg, rgba(255,255,255,1) 11%, rgba(57, 41, 29,1) 100%)"
 		}
 		return (

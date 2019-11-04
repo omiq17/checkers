@@ -5,7 +5,7 @@ export default function Field(props) {
 	const { value, highlight, handleClick, position } = props
 	let styles = {
 		field: {
-			background: value === 0 ? "#d45c45" : "#6d4d34",
+			background: value === 0 ? "#d2624c" : "#795548",
 			boxShadow: highlight === 1 ? "inset 0 0 2px 2px white" : "inset 0 0 0 0 white"
 		}
 	}
