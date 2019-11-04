@@ -40,7 +40,8 @@ export default class App extends Component {
 			availableMoves: [],
 			// 0: capturing move
 			// 1: non-capturing move
-			moveType: 1
+			moveType: 1,
+			mandatory: false
 		}
 	}
 
@@ -55,12 +56,69 @@ export default class App extends Component {
 
 	//Switch player
 	switchPlayer = () => {
-		this.setState({
-			player: this.state.player === 1 ? 2 : 1,
-			availableMoves: [],
-			current: [],
-			moveType: 1
+		this.setState(
+			{
+				player: this.state.player === 1 ? 2 : 1,
+				availableMoves: [],
+				current: [],
+				moveType: 1,
+				mandatory: false
+			},
+			() => {
+				//Check for all possible mandatory moves
+				let values = this.state.values.slice()
+				let { player } = this.state
+
+				values.map((row, i) => {
+					row.map((col, j) => {
+						if (col > 10 && col % 2 === player % 2) {
+							console.log(col, "rc")
+							let king = col > 12 ? true : false
+							let moves_1 = this.getAllMoves(player, king, 1, i, j)
+							let moves_2 = this.getAllMoves(player, king, 2, i, j)
+
+							let capture = this.checkMandatoryMove(values, player, moves_1, moves_2)
+							if (capture) {
+								this.setState({ current: [i, j] })
+								return 0
+							}
+						}
+					})
+				})
+			}
+		)
+	}
+
+	// Check for Mandatory move
+	checkMandatoryMove = (values, player, moves_1, moves_2) => {
+		// console.log(moves_1, "moves_1")
+		// console.log(moves_2, "moves_2")
+		let capturing_moves = []
+		let value_1 = 0
+		let value_2 = 0
+
+		moves_1.forEach((move, index) => {
+			// value_1 = values[move[0]][move[1]]
+			if (move) value_1 = values[move[0]][move[1]]
+			else value_1 = 0
+			if (moves_2[index]) value_2 = values[moves_2[index][0]][moves_2[index][1]]
+			else value_2 = 0
+
+			if (value_1 > 10 && value_1 % 2 !== player % 2 && value_2 === 10) {
+				console.log(value_1, player, value_2, "@debug")
+				capturing_moves.push(moves_2[index])
+			}
 		})
+
+		// console.log(capturing_moves, "cp")
+		// Check for capturing moves first
+		if (capturing_moves.length > 0) {
+			capturing_moves.forEach(move => this.highlightField(move[0], move[1]))
+			this.setState({ moveType: 0, availableMoves: capturing_moves, mandatory: true })
+			return true
+		} else {
+			return false
+		}
 	}
 
 	//Highlight a field
@@ -75,7 +133,7 @@ export default class App extends Component {
 		})
 	}
 
-	// Check for capturing moves first
+	// Check for capturing or non-capturing move
 	findMoveTypes = (values, player, moves_1, moves_2) => {
 		// console.log(moves_1, "moves_1")
 		// console.log(moves_2, "moves_2")
@@ -91,15 +149,17 @@ export default class App extends Component {
 			if (moves_2[index]) value_2 = values[moves_2[index][0]][moves_2[index][1]]
 			else value_2 = 0
 
+			// console.log(value_1, player, value_2, "@debug")
 			if (value_1 === 10) {
 				non_capturing_moves.push(move)
-			} else if (value_1 % 2 !== player && value_2 === 10) {
+			} else if (value_1 % 2 !== player % 2 && value_2 === 10) {
 				capturing_moves.push(moves_2[index])
 			}
 		})
 
 		// console.log(capturing_moves, "cp")
 		// console.log(non_capturing_moves, "ncp")
+		// Check for capturing moves first
 		if (capturing_moves.length > 0) {
 			capturing_moves.forEach(move => this.highlightField(move[0], move[1]))
 			this.setState({ moveType: 0, availableMoves: capturing_moves })
@@ -107,6 +167,38 @@ export default class App extends Component {
 			non_capturing_moves.forEach(move => this.highlightField(move[0], move[1]))
 			this.setState({ moveType: 1, availableMoves: non_capturing_moves })
 		}
+	}
+
+	// Move a piece
+	movePiece = (values, player, king, moveType, current, i, j) => {
+		values[i][j] = values[current[0]][current[1]]
+		values[current[0]][current[1]] = 10
+
+		// For Capturing move
+		if (moveType === 0) {
+			let vanish_i = (i + current[0]) / 2
+			let vanish_j = (j + current[1]) / 2
+			values[vanish_i][vanish_j] = 10
+
+			let captured = this.state.captured.slice()
+			captured[player - 1] = captured[player - 1] + 1
+			this.setState({ captured }, () => {
+				let moves_1 = this.getAllMoves(player, king, 1, i, j)
+				let moves_2 = this.getAllMoves(player, king, 2, i, j)
+				// console.log(moves_1, moves_2, "moves")
+
+				let capture_again = this.checkMandatoryMove(values, player, moves_1, moves_2)
+				if (capture_again) {
+					this.setState({ current: [i, j] })
+					return 0
+				}
+			})
+		}
+
+		this.switchPlayer()
+		this.disableHighlight(finish => {
+			return 0
+		})
 	}
 
 	// Get all combination of moves
@@ -138,7 +230,7 @@ export default class App extends Component {
 	handleClick = position => {
 		console.log(position, "pos")
 
-		let { player, availableMoves, moveType, current } = this.state
+		let { player, availableMoves, moveType, mandatory, current } = this.state
 		let values = this.state.values.slice()
 		// i : left side (top to bottom)
 		// j: top side (left to right)
@@ -149,31 +241,18 @@ export default class App extends Component {
 		// Check if clicked on the available highlighted positions
 		availableMoves.map(arr => {
 			if (arr[0] === i && arr[1] === j) {
-				// Move piece
-				values[i][j] = values[current[0]][current[1]]
-				values[current[0]][current[1]] = 10
-
-				// For Capturing move
-				if (moveType === 0) {
-					let vanish_i = (i + current[0]) / 2
-					let vanish_j = (j + current[1]) / 2
-					values[vanish_i][vanish_j] = 10
-
-					let captured = this.state.captured.slice()
-					captured[player - 1] = captured[player - 1] + 1
-					this.setState({ captured })
-				}
-
-				this.switchPlayer()
-				this.disableHighlight(finish => {
-					return
-				})
-				// console.log(position, "pos")
-				return
+				this.movePiece(values, player, king, moveType, current, i, j)
+				return 0
 			}
+			return 0
 		})
 
-		if (currentValue !== 0 && currentValue !== 10 && currentValue % 2 === player % 2) {
+		if (
+			!mandatory &&
+			currentValue !== 0 &&
+			currentValue !== 10 &&
+			currentValue % 2 === player % 2
+		) {
 			this.highlightField(i, j)
 			this.setState({ current: [i, j] })
 
@@ -186,7 +265,7 @@ export default class App extends Component {
 	}
 
 	render() {
-		console.log(this.state.captured, "state")
+		console.log(this.state.availableMoves, "state")
 		let styles = {
 			background:
 				this.state.player === 2
