@@ -22,11 +22,27 @@
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	height: 3em;
-	width: 3em;
+	height: 4em;
+	width: 4em;
 	cursor: pointer;
 	transition: box-shadow 150ms ease-in;
 }
 .col img {
 	width: 85%;
+}
+
+@media only screen and (max-width: 600px) {
+	body {
+		font-size: 12px;
+	}
+}
+@media only screen and (max-width: 400px) {
+	body {
+		font-size: 10px;
+	}
+}
+@media only screen and (max-width: 350px) {
+	body {
+		font-size: 8px;
+	}
 }
