@@ -50,7 +50,8 @@ export default class App extends Component {
 			// 0: capturing move
 			// 1: non-capturing move
 			moveType: 1,
-			mandatory: false
+			mandatory: false,
+			chooseInputMode: false
 		}
 	}
 
@@ -77,14 +78,7 @@ export default class App extends Component {
 							let moves_1 = this.getAllMoves(player, king, 1, i, j)
 							let moves_2 = this.getAllMoves(player, king, 2, i, j)
 
-							await this.checkMandatoryMove(
-								values,
-								player,
-								moves_1,
-								moves_2,
-								[i, j],
-								"2"
-							)
+							await this.checkMandatoryMove(values, player, moves_1, moves_2, [i, j])
 						}
 					}
 				}
@@ -93,7 +87,7 @@ export default class App extends Component {
 	}
 
 	// Check for Mandatory move
-	checkMandatoryMove = async (values, player, moves_1, moves_2, position, call) => {
+	checkMandatoryMove = async (values, player, moves_1, moves_2, position) => {
 		// console.log(moves_1, "moves_1")
 		// console.log(moves_2, "moves_2")
 		let capturing_moves = JSON.parse(JSON.stringify(this.state.availableMoves))
@@ -109,7 +103,7 @@ export default class App extends Component {
 			else value_2 = 0
 
 			if (value_1 > 10 && value_1 % 2 !== player % 2 && value_2 === 10) {
-				console.log(value_1, player, value_2, position, call, "@debug")
+				// console.log(value_1, player, value_2, position, "@debug")
 				this.highlightField(moves_2[index][0], moves_2[index][1])
 				this.highlightField(position[0], position[1])
 
@@ -273,14 +267,10 @@ export default class App extends Component {
 					// 	"disable highlight first, then do change player if no more mandatory move"
 					// )
 				})
-				capture_again = await this.checkMandatoryMove(
-					values,
-					player,
-					moves_1,
-					moves_2,
-					[to[0], to[1]],
-					"1"
-				)
+				capture_again = await this.checkMandatoryMove(values, player, moves_1, moves_2, [
+					to[0],
+					to[1]
+				])
 				// console.log(capture_again, "bbb")
 				if (capture_again === 1) return 0
 				else this.switchPlayer()
@@ -318,11 +308,18 @@ export default class App extends Component {
 		return moves
 	}
 
+	inputHighlight = inputs => {
+		let highlight = this.state.highlight.slice()
+		inputs.forEach(input => {
+			highlight[input[0]][input[1]] = 2
+		})
+	}
+
 	// Handle a user click
 	handleClick = position => {
 		console.log(position, "pos")
 
-		let { player, availableMoves, moveType, mandatory } = this.state
+		let { player, availableMoves, moveType, mandatory, chooseInputMode } = this.state
 		let values = this.state.values.slice()
 		// i : left side (top to bottom)
 		// j: top side (left to right)
@@ -333,6 +330,17 @@ export default class App extends Component {
 		// Check if clicked on the available highlighted positions
 		for (const [index, arr] of availableMoves.to.entries()) {
 			if (arr[0] === i && arr[1] === j) {
+				// Resolving common match case
+				// Taking choice from input
+				if (
+					availableMoves.to.length >= 2 &&
+					moveType === 0 &&
+					availableMoves.to[0].toString() === availableMoves.to[1].toString()
+				) {
+					this.inputHighlight(availableMoves.from)
+					return this.setState({ chooseInputMode: true })
+				}
+
 				return this.movePiece(
 					values,
 					player,
@@ -360,10 +368,27 @@ export default class App extends Component {
 				this.findMoveTypes(values, player, moves_1, moves_2, position)
 			})
 		}
+
+		// Resolving common match case
+		if (chooseInputMode) {
+			for (const [index, arr] of availableMoves.from.entries()) {
+				if (arr[0] === i && arr[1] === j) {
+					this.setState({ chooseInputMode: false })
+					return this.movePiece(
+						values,
+						player,
+						king,
+						moveType,
+						arr,
+						availableMoves.to[index]
+					)
+				}
+			}
+		}
 	}
 
 	render() {
-		// console.log(this.state.availableMoves, "state")
+		console.log(this.state.availableMoves, "state")
 		let styles = {
 			background:
 				this.state.player === 2
