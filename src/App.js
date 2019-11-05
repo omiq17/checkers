@@ -331,7 +331,7 @@ export default class App extends Component {
 		let king = currentValue > 12 ? true : false
 
 		// Check if clicked on the available highlighted positions
-		for (const [index, arr] of values.entries()) {
+		for (const [index, arr] of availableMoves.to.entries()) {
 			if (arr[0] === i && arr[1] === j) {
 				return this.movePiece(
 					values,
