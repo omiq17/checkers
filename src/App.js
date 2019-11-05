@@ -331,13 +331,18 @@ export default class App extends Component {
 		let king = currentValue > 12 ? true : false
 
 		// Check if clicked on the available highlighted positions
-		availableMoves.to.map((arr, index) => {
+		for (const [index, arr] of values.entries()) {
 			if (arr[0] === i && arr[1] === j) {
-				this.movePiece(values, player, king, moveType, availableMoves.from[index], arr)
-				return 0
+				return this.movePiece(
+					values,
+					player,
+					king,
+					moveType,
+					availableMoves.from[index],
+					arr
+				)
 			}
-			return 0
-		})
+		}
 
 		if (
 			!mandatory &&
