@@ -23,6 +23,16 @@ export default class App extends Component {
 				[0, 11, 0, 11, 0, 11, 0, 11],
 				[11, 0, 11, 0, 11, 0, 11, 0]
 			],
+			// values: [
+			// 	[0, 10, 0, 10, 0, 12, 0, 12],
+			// 	[12, 0, 12, 0, 12, 0, 12, 0],
+			// 	[0, 12, 0, 10, 0, 12, 0, 12],
+			// 	[10, 0, 11, 0, 10, 0, 10, 0],
+			// 	[0, 10, 0, 10, 0, 10, 0, 10],
+			// 	[11, 0, 11, 0, 12, 0, 11, 0],
+			// 	[0, 10, 0, 10, 0, 10, 0, 11],
+			// 	[11, 0, 11, 0, 11, 0, 11, 0]
+			// ],
 			highlight: [
 				[0, 0, 0, 0, 0, 0, 0, 0],
 				[0, 0, 0, 0, 0, 0, 0, 0],
@@ -67,7 +77,14 @@ export default class App extends Component {
 							let moves_1 = this.getAllMoves(player, king, 1, i, j)
 							let moves_2 = this.getAllMoves(player, king, 2, i, j)
 
-							await this.checkMandatoryMove(values, player, moves_1, moves_2, [i, j])
+							await this.checkMandatoryMove(
+								values,
+								player,
+								moves_1,
+								moves_2,
+								[i, j],
+								"2"
+							)
 						}
 					}
 				}
@@ -76,7 +93,7 @@ export default class App extends Component {
 	}
 
 	// Check for Mandatory move
-	checkMandatoryMove = async (values, player, moves_1, moves_2, position) => {
+	checkMandatoryMove = async (values, player, moves_1, moves_2, position, call) => {
 		// console.log(moves_1, "moves_1")
 		// console.log(moves_2, "moves_2")
 		let capturing_moves = JSON.parse(JSON.stringify(this.state.availableMoves))
@@ -84,7 +101,7 @@ export default class App extends Component {
 		let value_1 = 0
 		let value_2 = 0
 
-		moves_1.forEach((move, index) => {
+		for (const [index, move] of moves_1.entries()) {
 			// value_1 = values[move[0]][move[1]]
 			if (move) value_1 = values[move[0]][move[1]]
 			else value_1 = 0
@@ -92,22 +109,22 @@ export default class App extends Component {
 			else value_2 = 0
 
 			if (value_1 > 10 && value_1 % 2 !== player % 2 && value_2 === 10) {
-				// console.log(value_1, player, value_2, "@debug")
+				console.log(value_1, player, value_2, position, call, "@debug")
 				this.highlightField(moves_2[index][0], moves_2[index][1])
 				this.highlightField(position[0], position[1])
 
 				capturing_moves.from.push(position)
 				capturing_moves.to.push(moves_2[index])
 			}
-		})
+		}
 
 		// console.log(capturing_moves, "cp")
 		// Check for capturing moves first
 		if (capturing_moves.from.length > 0) {
 			await this.setState({ moveType: 0, availableMoves: capturing_moves, mandatory: true })
-			return true
+			return 1
 		} else {
-			return false
+			return 2
 		}
 	}
 
@@ -144,7 +161,7 @@ export default class App extends Component {
 			if (moves_2[index]) value_2 = values[moves_2[index][0]][moves_2[index][1]]
 			else value_2 = 0
 
-			// console.log(value_1, player, value_2, "@debug")
+			console.log(value_1, player, value_2, "@debug1")
 			if (value_1 === 10) {
 				non_capturing_moves.from.push(position)
 				non_capturing_moves.to.push(move)
@@ -172,36 +189,73 @@ export default class App extends Component {
 		}
 	}
 
+	// Review if game ends
+	// Then if player becoms King
+	checkGameState = (player, king, captured, values, i, j) => {
+		if (captured[0] === 12) {
+			console.log("1 win")
+			return { king: king, newKing: false, gameEnd: true }
+		} else if (captured[1] === 12) {
+			console.log("2 win")
+			return { king: king, newKing: false, gameEnd: true }
+		} else if ((!king && (player === 1 && i === 0)) || (player === 2 && i === 7)) {
+			//Making of a New KING
+			values[i][j] = 10 + player + 2
+			this.setState({ values })
+			return { king: true, newKing: true, gameEnd: false }
+		} else {
+			return { king: king, newKing: false, gameEnd: false }
+		}
+	}
 	// Move a piece
-	movePiece = (values, player, king, moveType, from, to) => {
+	movePiece = async (values, player, king, moveType, from, to) => {
 		values[to[0]][to[1]] = values[from[0]][from[1]]
 		values[from[0]][from[1]] = 10
+		let captured = this.state.captured.slice()
 
 		// For Capturing move
 		if (moveType === 0) {
+			// vanishing opponent
 			let vanish_i = (to[0] + from[0]) / 2
 			let vanish_j = (to[1] + from[1]) / 2
 			values[vanish_i][vanish_j] = 10
-
-			let captured = this.state.captured.slice()
 			captured[player - 1] = captured[player - 1] + 1
-			this.setState({ captured, availableMoves: { from: [], to: [] } }, async () => {
-				let moves_1 = this.getAllMoves(player, king, 1, to[0], to[1])
-				let moves_2 = this.getAllMoves(player, king, 2, to[0], to[1])
+		}
+
+		let capture_again = 0
+		await this.setState({ captured, availableMoves: { from: [], to: [] } }, async () => {
+			//Check game state first
+			let result = await this.checkGameState(player, king, captured, values, to[0], to[1])
+
+			//Actions based on result
+			if (result.gameEnd) return 0
+			if (!result.gameEnd && !result.newKing && moveType === 0) {
+				let moves_1 = this.getAllMoves(player, result.king, 1, to[0], to[1])
+				let moves_2 = this.getAllMoves(player, result.king, 2, to[0], to[1])
 				// console.log(moves_1, moves_2, "moves")
 
-				let capture_again = await this.checkMandatoryMove(
+				this.disableHighlight(finish => {
+					console.log(
+						"disable highlight first, then do change player if no more mandatory move"
+					)
+				})
+				capture_again = await this.checkMandatoryMove(
 					values,
 					player,
 					moves_1,
 					moves_2,
-					[to[0], to[1]]
+					[to[0], to[1]],
+					"1"
 				)
-				if (capture_again) return 0
-			})
-		}
-		this.disableHighlight(finish => {
-			if (finish) this.switchPlayer()
+				console.log(capture_again, "bbb")
+				if (capture_again === 1) return 0
+				else this.switchPlayer()
+			}
+			if (moveType === 1 || result.newKing)
+				this.disableHighlight(finish => {
+					console.log(moveType, capture_again, "ppp2")
+					if (finish) this.switchPlayer()
+				})
 		})
 	}
 
