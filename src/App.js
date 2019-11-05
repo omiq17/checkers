@@ -161,7 +161,7 @@ export default class App extends Component {
 			if (moves_2[index]) value_2 = values[moves_2[index][0]][moves_2[index][1]]
 			else value_2 = 0
 
-			console.log(value_1, player, value_2, "@debug1")
+			// console.log(value_1, player, value_2, "@debug1")
 			if (value_1 === 10) {
 				non_capturing_moves.from.push(position)
 				non_capturing_moves.to.push(move)
@@ -189,14 +189,48 @@ export default class App extends Component {
 		}
 	}
 
+	// Reseting Game
+	resetGame() {
+		this.setState({
+			values: [
+				[0, 12, 0, 12, 0, 12, 0, 12],
+				[12, 0, 12, 0, 12, 0, 12, 0],
+				[0, 12, 0, 12, 0, 12, 0, 12],
+				[10, 0, 10, 0, 10, 0, 10, 0],
+				[0, 10, 0, 10, 0, 10, 0, 10],
+				[11, 0, 11, 0, 11, 0, 11, 0],
+				[0, 11, 0, 11, 0, 11, 0, 11],
+				[11, 0, 11, 0, 11, 0, 11, 0]
+			],
+			highlight: [
+				[0, 0, 0, 0, 0, 0, 0, 0],
+				[0, 0, 0, 0, 0, 0, 0, 0],
+				[0, 0, 0, 0, 0, 0, 0, 0],
+				[0, 0, 0, 0, 0, 0, 0, 0],
+				[0, 0, 0, 0, 0, 0, 0, 0],
+				[0, 0, 0, 0, 0, 0, 0, 0],
+				[0, 0, 0, 0, 0, 0, 0, 0],
+				[0, 0, 0, 0, 0, 0, 0, 0]
+			],
+			player: 1,
+			current: [],
+			captured: [0, 0],
+			availableMoves: { from: [], to: [] },
+			moveType: 1,
+			mandatory: false
+		})
+	}
+
 	// Review if game ends
 	// Then if player becoms King
 	checkGameState = (player, king, captured, values, i, j) => {
 		if (captured[0] === 12) {
 			console.log("1 win")
+			this.resetGame()
 			return { king: king, newKing: false, gameEnd: true }
 		} else if (captured[1] === 12) {
 			console.log("2 win")
+			this.resetGame()
 			return { king: king, newKing: false, gameEnd: true }
 		} else if ((!king && (player === 1 && i === 0)) || (player === 2 && i === 7)) {
 			//Making of a New KING
@@ -235,9 +269,9 @@ export default class App extends Component {
 				// console.log(moves_1, moves_2, "moves")
 
 				this.disableHighlight(finish => {
-					console.log(
-						"disable highlight first, then do change player if no more mandatory move"
-					)
+					// console.log(
+					// 	"disable highlight first, then do change player if no more mandatory move"
+					// )
 				})
 				capture_again = await this.checkMandatoryMove(
 					values,
@@ -247,13 +281,13 @@ export default class App extends Component {
 					[to[0], to[1]],
 					"1"
 				)
-				console.log(capture_again, "bbb")
+				// console.log(capture_again, "bbb")
 				if (capture_again === 1) return 0
 				else this.switchPlayer()
 			}
 			if (moveType === 1 || result.newKing)
 				this.disableHighlight(finish => {
-					console.log(moveType, capture_again, "ppp2")
+					// console.log(moveType, capture_again, "ppp2")
 					if (finish) this.switchPlayer()
 				})
 		})
