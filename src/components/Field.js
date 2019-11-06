@@ -8,9 +8,11 @@ export default function Field(props) {
 			background: value === 0 ? "#d2624c" : "#795548",
 			boxShadow:
 				highlight === 1
-					? "inset 0 0 2px 2px white"
+					? "inset 0 0 0.17em 0.17em white"
 					: highlight === 2
-					? "inset 0 0 4px 4px #E91E63"
+					? "inset 0 0 0.17em 0.17em #E91E63"
+					: highlight === 3
+					? "inset 0 0 0.17em 0.17em #ffc107"
 					: "inset 0 0 0 0 white"
 		}
 	}

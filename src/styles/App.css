@@ -3,13 +3,23 @@
 	flex-direction: column;
 	justify-content: space-evenly;
 	align-items: center;
-	height: 100vh;
+	min-height: 100vh;
 	text-align: center;
 	transition: background 500ms ease-in;
 }
 
+h1,
+h2,
+p {
+	margin: 0.25em 0em;
+}
+
 .App h1 {
 	color: #6d4d34;
+	font-size: 3em;
+}
+.App h1 sub {
+	font-size: 0.41em;
 }
 
 .row {
@@ -29,6 +39,20 @@
 }
 .col img {
 	width: 85%;
+}
+
+.score {
+	width: 22em;
+	background: #6d4d34;
+	border-radius: 0.25em;
+	color: aliceblue;
+	padding: 0.25em 0em;
+}
+
+.rematch {
+	cursor: pointer;
+	text-decoration: underline;
+	font-size: 1.25em;
 }
 
 @media only screen and (max-width: 600px) {

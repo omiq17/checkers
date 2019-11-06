@@ -104,8 +104,8 @@ export default class App extends Component {
 
 			if (value_1 > 10 && value_1 % 2 !== player % 2 && value_2 === 10) {
 				// console.log(value_1, player, value_2, position, "@debug")
-				this.highlightField(moves_2[index][0], moves_2[index][1])
-				this.highlightField(position[0], position[1])
+				this.highlightField(moves_2[index][0], moves_2[index][1], 3)
+				this.highlightField(position[0], position[1], 1)
 
 				capturing_moves.from.push(position)
 				capturing_moves.to.push(moves_2[index])
@@ -123,10 +123,10 @@ export default class App extends Component {
 	}
 
 	//Highlight a field
-	highlightField = (i, j) => {
+	highlightField = (i, j, type) => {
 		// console.log(i, j, "highlight")
 		let highlight = this.state.highlight.slice()
-		highlight[i][j] = 1
+		highlight[i][j] = type
 		highlight = this.setState({ highlight })
 	}
 
@@ -170,21 +170,21 @@ export default class App extends Component {
 		// Check for capturing moves first
 		if (capturing_moves.from.length > 0) {
 			capturing_moves.from.forEach((move, i) => {
-				this.highlightField(move[0], move[1])
-				this.highlightField(capturing_moves.to[i][0], capturing_moves.to[i][1])
+				this.highlightField(move[0], move[1], 1)
+				this.highlightField(capturing_moves.to[i][0], capturing_moves.to[i][1], 3)
 			})
 			this.setState({ moveType: 0, availableMoves: capturing_moves })
 		} else {
 			non_capturing_moves.from.forEach((move, i) => {
-				this.highlightField(move[0], move[1])
-				this.highlightField(non_capturing_moves.to[i][0], non_capturing_moves.to[i][1])
+				this.highlightField(move[0], move[1], 1)
+				this.highlightField(non_capturing_moves.to[i][0], non_capturing_moves.to[i][1], 3)
 			})
 			this.setState({ moveType: 1, availableMoves: non_capturing_moves })
 		}
 	}
 
 	// Reseting Game
-	resetGame() {
+	resetGame = () => {
 		this.setState({
 			values: [
 				[0, 12, 0, 12, 0, 12, 0, 12],
@@ -219,12 +219,10 @@ export default class App extends Component {
 	// Then if player becoms King
 	checkGameState = (player, king, captured, values, i, j) => {
 		if (captured[0] === 12) {
-			console.log("1 win")
-			this.resetGame()
+			// console.log("1 win")
 			return { king: king, newKing: false, gameEnd: true }
 		} else if (captured[1] === 12) {
-			console.log("2 win")
-			this.resetGame()
+			// console.log("2 win")
 			return { king: king, newKing: false, gameEnd: true }
 		} else if ((!king && (player === 1 && i === 0)) || (player === 2 && i === 7)) {
 			//Making of a New KING
@@ -359,7 +357,7 @@ export default class App extends Component {
 			currentValue % 2 === player % 2
 		) {
 			this.disableHighlight(finish => {
-				if (finish) this.highlightField(i, j)
+				if (finish) this.highlightField(i, j, 1)
 
 				let moves_1 = this.getAllMoves(player, king, 1, i, j)
 				let moves_2 = this.getAllMoves(player, king, 2, i, j)
@@ -397,13 +395,21 @@ export default class App extends Component {
 		}
 		return (
 			<div className="App" style={styles}>
-				<h1>Checkers</h1>
+				<h1>
+					CHECKERS<sub>multiplayer</sub>
+				</h1>
 				<Board
 					values={this.state.values}
 					highlight={this.state.highlight}
 					handleClick={this.handleClick}
 				/>
-				<ScoreCard />
+				<ScoreCard
+					player={this.state.player}
+					mandatory={this.state.mandatory}
+					chooseInputMode={this.state.chooseInputMode}
+					captured={this.state.captured}
+					resetGame={this.resetGame}
+				/>
 			</div>
 		)
 	}
