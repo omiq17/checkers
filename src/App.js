@@ -315,7 +315,7 @@ export default class App extends Component {
 
 	// Handle a user click
 	handleClick = position => {
-		console.log(position, "pos")
+		// console.log(position, "pos")
 
 		let { player, availableMoves, moveType, mandatory, chooseInputMode } = this.state
 		let values = this.state.values.slice()
@@ -386,7 +386,7 @@ export default class App extends Component {
 	}
 
 	render() {
-		console.log(this.state.availableMoves, "state")
+		// console.log(this.state.availableMoves, "state")
 		let styles = {
 			background:
 				this.state.player === 2
