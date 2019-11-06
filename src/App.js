@@ -51,7 +51,9 @@ export default class App extends Component {
 			// 1: non-capturing move
 			moveType: 1,
 			mandatory: false,
-			chooseInputMode: false
+			chooseInputMode: false,
+			red: 0,
+			black: 0
 		}
 	}
 
@@ -220,9 +222,11 @@ export default class App extends Component {
 	checkGameState = (player, king, captured, values, i, j) => {
 		if (captured[0] === 12) {
 			// console.log("1 win")
+			this.setState({ black: this.state.black + 1 })
 			return { king: king, newKing: false, gameEnd: true }
 		} else if (captured[1] === 12) {
 			// console.log("2 win")
+			this.setState({ red: this.state.red + 1 })
 			return { king: king, newKing: false, gameEnd: true }
 		} else if ((!king && (player === 1 && i === 0)) || (player === 2 && i === 7)) {
 			//Making of a New KING
@@ -409,6 +413,8 @@ export default class App extends Component {
 					chooseInputMode={this.state.chooseInputMode}
 					captured={this.state.captured}
 					resetGame={this.resetGame}
+					red={this.state.red}
+					black={this.state.black}
 				/>
 			</div>
 		)
